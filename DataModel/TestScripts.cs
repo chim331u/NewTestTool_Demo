@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using DataModel.Enum;
 
 namespace DataModel;
 
@@ -9,14 +10,14 @@ public class TestScripts : BaseEntity
     
     public required TestCases TestCase { get; set; }
     
-    
     //optional
-    public string? TestScriptStepNum { get; set; }
-    public string? TestScriptStepDescription { get; set; }
-    public string? TestScriptExpectedResult { get; set; }
-    public string? TestScriptResult { get; set; } // Enum PASS, FAIL, WAIT, ETC.
-    public string? Environment { get; set; } //Enum T1, T2, R3, etc
-    public int TestScriptCompletedPercent { get; set; } // 100%, 0%
-    public string? ReferToTransaction { get; set; } // i.e. TrxId
+    public string? ScriptStepNum { get; set; }
+    public string? ScriptStepDescription { get; set; }
+    public string? ScriptExpectedResult { get; set; }
+    public Results? ScriptResult { get; set; } // Enum PASS, FAIL, WAIT, ETC.
+    public Environments? ScriptEnvironment { get; set; } //Enum T1, T2, R3, etc
+    public double ScriptCompletedPercent { get; set; } = 0;     // 100%, 0%
+    public string? ScriptReferToTransaction { get; set; } // i.e. TrxId
+    public string? ScriptRowMessage { get; set; }
     
 }

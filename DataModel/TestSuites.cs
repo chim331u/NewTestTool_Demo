@@ -14,6 +14,7 @@ public class TestSuites : BaseEntity
     
     
     //optional
+    public int SuiteId { get; set; }
     public string? JiraReference { get; set; } //requirement id --ref to fsd id
     public string? Cr3atReference { get; set; }
     public string? RequirementName { get; set; }
@@ -21,7 +22,7 @@ public class TestSuites : BaseEntity
     public string? ChangeDescription { get; set; }
     
     
-    //Todo:
+    //DTO ?
     //number of test cases in this test suite
     // % completamento 
     

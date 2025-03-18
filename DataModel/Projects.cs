@@ -15,7 +15,9 @@ public class Projects : BaseEntity
     public string? ProjectCode { get; set; }
     public string? RmsNumber { get; set; }
     public DateTime? ProductionDate { get; set; }
+    
 
+    //DTO only
     public int PassPercent { get; set; }
     public int TestCaseNum { get; set; }
     

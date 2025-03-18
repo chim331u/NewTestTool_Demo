@@ -4,6 +4,7 @@ namespace DataModel;
 
 public class TestCases : BaseEntity 
 {
+    //excel row
     [Key]
     public int Id { get; set; }
     
@@ -18,7 +19,7 @@ public class TestCases : BaseEntity
     public string? ChangeDescription { get; set; }
     
     
-    //Todo:
+    //DTO ?
     //number of test script in this test case
     // % completamento 
 }
