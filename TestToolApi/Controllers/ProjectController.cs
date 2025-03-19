@@ -33,4 +33,53 @@ public class ProjectController : ControllerBase
         return Ok(projects);
     }
     
+    [HttpGet("GetProject/{id}")]
+    public async Task<ActionResult<Projects>> GetProject(int id)
+    {
+        var project = await _service.GetProject(id);
+
+        if (project == null)
+        {
+            return NotFound();
+        }
+
+        return Ok(project);
+    }
+    
+    [HttpPost("AddProject")]
+    public async Task<ActionResult<Projects>> AddProject(Projects project)
+    {
+        var newProject = await _service.CreateProject(project);
+
+        return CreatedAtAction("GetProject", new { id = newProject.Id }, newProject);
+    }
+    
+    [HttpPut("UpdateProject/{id}")]
+    public async Task<IActionResult> UpdateProject(int id, Projects project)
+    {
+        if (id != project.Id)
+        {
+            return BadRequest();
+        }
+
+        await _service.UpdateProject(project);
+
+        return NoContent();
+    }
+    
+    [HttpDelete("DeleteProject/{id}")]
+    public async Task<IActionResult> DeleteProject(int id)
+    {
+        var project = await _service.GetProject(id);
+
+        if (project == null)
+        {
+            return NotFound();
+        }
+
+        await _service.DeleteProject(id);
+
+        return NoContent();
+    }
+    
 }
