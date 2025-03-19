@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataModel", "DataModel\Data
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestToolApi", "TestToolApi\TestToolApi.csproj", "{72026ACB-4712-4AE5-8ECE-4289E65D6A43}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestToolWeb", "TestToolWeb\TestToolWeb.csproj", "{583877AC-8154-4E4B-B8EC-E2AC1AB14E01}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{72026ACB-4712-4AE5-8ECE-4289E65D6A43}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{72026ACB-4712-4AE5-8ECE-4289E65D6A43}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{72026ACB-4712-4AE5-8ECE-4289E65D6A43}.Release|Any CPU.Build.0 = Release|Any CPU
+		{583877AC-8154-4E4B-B8EC-E2AC1AB14E01}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{583877AC-8154-4E4B-B8EC-E2AC1AB14E01}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{583877AC-8154-4E4B-B8EC-E2AC1AB14E01}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{583877AC-8154-4E4B-B8EC-E2AC1AB14E01}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
