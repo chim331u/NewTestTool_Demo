@@ -1,5 +1,6 @@
 ﻿@page "/"
 
+
 <PageTitle>Home</PageTitle>
 
 <h1>Hello, world!</h1>
@@ -10,9 +11,28 @@ Welcome to your new app.
 
 
 @code {
-    void ButtonClicked()
+
+    [Inject] public IApiService _service { get; set; }
+
+    private async Task ButtonClicked()
     {
         Console.WriteLine("Clicked");
         // Handle the Click event of RadzenButton
+
+        var projectList = await _service.GetProjectList();
+
+        if (projectList != null)
+        {
+            Console.WriteLine($"Retrived {projectList.Count} projects");
+            foreach (var _project in projectList)
+            {
+                Console.WriteLine($"Project Name: {_project.ProjectName}");
+            }
+        }
+        else
+        {
+            Console.WriteLine("No project found");
+        }
     }
+
 }

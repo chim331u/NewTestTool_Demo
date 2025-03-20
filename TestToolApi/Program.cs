@@ -11,6 +11,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddCors(policy =>
+{
+    policy.AddPolicy(
+        "AllowAll", builder => builder.AllowAnyOrigin()
+            .SetIsOriginAllowed(host => true)
+            .AllowAnyMethod()
+            .AllowAnyHeader());
+});
+
 builder.Services.AddDbContext<DataContext>(
     opt => opt.UseSqlite(builder.Configuration.GetConnectionString("SqlLiteConnectionFileName")));
 builder.Services.AddScoped<IprojectInterface, ProjectServices>();
@@ -31,6 +40,7 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<DataContext>();
     db.Database.Migrate();
 }
+app.UseCors("AllowAll");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

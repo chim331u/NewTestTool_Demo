@@ -7,7 +7,7 @@ public interface IApiService
     Task<List<Projects>> GetProjectList();
     Task<Projects> GetProject(int id);
     
-    Task<Projects> UpdateConfig(Projects item);
+    Task<Projects> UpdateConfig(int id, Projects item);
     Task<Projects> AddConfig(Projects item);
     Task<Projects> DeleteConfig(int id);
     
