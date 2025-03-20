@@ -5,3 +5,14 @@
 <h1>Hello, world!</h1>
 
 Welcome to your new app.
+
+<RadzenButton ButtonStyle="ButtonStyle.Danger" Click="@ButtonClicked" Text="Hi"></RadzenButton>
+
+
+@code {
+    void ButtonClicked()
+    {
+        Console.WriteLine("Clicked");
+        // Handle the Click event of RadzenButton
+    }
+}
