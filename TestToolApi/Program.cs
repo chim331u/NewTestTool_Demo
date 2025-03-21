@@ -22,7 +22,7 @@ builder.Services.AddCors(policy =>
 
 builder.Services.AddDbContext<DataContext>(
     opt => opt.UseSqlite(builder.Configuration.GetConnectionString("SqlLiteConnectionFileName")));
-builder.Services.AddScoped<IprojectInterface, ProjectServices>();
+builder.Services.AddScoped<IDataInterface, DataServices>();
 
 builder.Services.AddControllers();
 

@@ -9,11 +9,11 @@ namespace TestToolApi.Controllers;
 public class ProjectController : ControllerBase
 {
 
-    private readonly IprojectInterface _service;
+    private readonly IDataInterface _service;
     private readonly IConfiguration _config;
     private readonly ILogger<ProjectController> _logger;
 
-    public ProjectController(IConfiguration config, ILogger<ProjectController> logger, IprojectInterface service)
+    public ProjectController(IConfiguration config, ILogger<ProjectController> logger, IDataInterface service)
     {
         _service = service;
         _config = config;
