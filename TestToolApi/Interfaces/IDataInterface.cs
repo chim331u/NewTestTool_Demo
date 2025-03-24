@@ -26,6 +26,7 @@ public interface IDataInterface
     #region Cases
     Task<List<TestCases>> GetCasesList();
     Task<List<TestCases>> GetCasesList(int suiteId);
+    Task<List<TestCases>> GetCasesListByProject(int projectId);
     Task<TestCases> GetCase(int id);
     Task<TestCases> CreateCase(TestCases testCase);
     Task<TestCases> UpdateCase(TestCases testCase);

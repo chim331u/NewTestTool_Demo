@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using TestToolApi.Data;
@@ -24,7 +25,8 @@ builder.Services.AddDbContext<DataContext>(
     opt => opt.UseSqlite(builder.Configuration.GetConnectionString("SqlLiteConnectionFileName")));
 builder.Services.AddScoped<IDataInterface, DataServices>();
 
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddJsonOptions(x =>
+    x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve);
 
 var logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)

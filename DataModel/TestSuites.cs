@@ -10,7 +10,8 @@ public class TestSuites : BaseEntity
     [Key]
     public int Id { get; set; }
 
-    public required Projects Project { get; set; }
+    public int ProjectId { get; set; }
+    public Projects Project { get; set; }
     
     
     //optional
@@ -20,8 +21,7 @@ public class TestSuites : BaseEntity
     public string? RequirementName { get; set; }
     public string? RequirementDescription { get; set; }
     public string? ChangeDescription { get; set; }
-    
-    
+    public virtual ICollection<TestCases> TestCases { get; } = new List<TestCases>();
     //DTO ?
     //number of test cases in this test suite
     // % completamento 

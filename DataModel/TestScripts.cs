@@ -8,7 +8,8 @@ public class TestScripts : BaseEntity
     [Key]
     public int Id { get; set; }
     
-    public required TestCases TestCase { get; set; }
+    public int TestCaseId { get; set; }
+    public TestCases TestCase { get; set; }
     
     //optional
     public string? ScriptStepNum { get; set; }

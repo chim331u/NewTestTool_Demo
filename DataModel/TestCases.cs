@@ -7,8 +7,9 @@ public class TestCases : BaseEntity
     //excel row
     [Key]
     public int Id { get; set; }
-    
-    public required TestSuites TestSuite { get; set; }
+
+    public int TestSuiteId { get; set; }
+    public TestSuites TestSuite { get; set; }
     
     
     //optional
@@ -18,6 +19,8 @@ public class TestCases : BaseEntity
     public string? TestCasePrecondition { get; set; }
     public string? ChangeDescription { get; set; }
     
+    
+    public virtual ICollection<TestScripts> TestScripts { get; } = new List<TestScripts>();
     
     //DTO ?
     //number of test script in this test case

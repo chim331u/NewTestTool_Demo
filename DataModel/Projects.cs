@@ -17,6 +17,9 @@ public class Projects : BaseEntity
     public DateTime? ProductionDate { get; set; }
     
 
+    
+    public virtual ICollection<TestSuites> TestSuites { get; } = new List<TestSuites>();
+    
     //DTO only
     public int PassPercent { get; set; }
     public int TestCaseNum { get; set; }

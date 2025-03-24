@@ -10,20 +10,24 @@ public class DataServices : IDataInterface
     private readonly DataContext _context;
     private readonly IConfiguration _config;
     private readonly ILogger<DataServices> _logger;
-    
+
     public DataServices(IConfiguration config, ILogger<DataServices> logger, DataContext context)
     {
         _context = context;
         _config = config;
         _logger = logger;
     }
-    
+
     #region Projects
+
     public async Task<List<Projects>> GetProjectList()
     {
         try
         {
-            var projectList = await _context.Projects.Where(c => c.IsActive).ToListAsync(); ;
+            var projectList = await _context.Projects.AsNoTracking()
+                .Include(x=>x.TestSuites).ThenInclude(x=>x.TestCases)
+                .Where(c => c.IsActive).ToListAsync();
+            ;
             _logger.LogInformation("Get all projects");
             return projectList;
         }
@@ -33,7 +37,7 @@ public class DataServices : IDataInterface
             return null;
         }
     }
-    
+
     public async Task<Projects> GetProject(int id)
     {
         try
@@ -48,7 +52,7 @@ public class DataServices : IDataInterface
             return null;
         }
     }
-    
+
     public async Task<Projects> CreateProject(Projects project)
     {
         try
@@ -66,16 +70,16 @@ public class DataServices : IDataInterface
             return null;
         }
     }
-    
+
     public async Task<Projects> UpdateProject(Projects project)
     {
         try
         {
             project.ModifiedDate = DateTime.Now;
             _context.Entry(project).State = EntityState.Modified;
-            
+
             await _context.SaveChangesAsync();
-            
+
             _logger.LogInformation($"Update project: {project.ProjectName}");
             return project;
         }
@@ -85,7 +89,7 @@ public class DataServices : IDataInterface
             return null;
         }
     }
-    
+
     public async Task<Projects> DeleteProject(int id)
     {
         try
@@ -94,9 +98,9 @@ public class DataServices : IDataInterface
             project.IsActive = false;
             project.ModifiedDate = DateTime.Now;
             _context.Entry(project).State = EntityState.Modified;
-            
+
             await _context.SaveChangesAsync();
-            
+
             _logger.LogInformation($"Deleted project: {project.ProjectName}");
             return project;
         }
@@ -107,17 +111,19 @@ public class DataServices : IDataInterface
         }
     }
 
-
     #endregion
 
     #region Suites
 
-    
     public async Task<List<TestSuites>> GetSuitesList()
     {
         try
         {
-            var _suiteList = await _context.TestSuites.Where(c => c.IsActive).ToListAsync(); ;
+            var _suiteList = await _context?.TestSuites
+                .AsNoTracking()
+                .Include(a => a.Project)?
+                .Where(c => c.IsActive).ToListAsync()!;
+            ;
             _logger.LogInformation("Get all Suites");
             return _suiteList;
         }
@@ -132,7 +138,11 @@ public class DataServices : IDataInterface
     {
         try
         {
-            var _suiteList = await _context.TestSuites.Where(c => c.IsActive && c.Project.Id == projectId).ToListAsync(); ;
+            var _suiteList = await _context?.TestSuites?
+                .AsNoTracking()
+                .Include(a => a.Project)?
+                .Where(c => c.IsActive && c.Project.Id == projectId).ToListAsync()!;
+
             _logger.LogInformation($"Get all Suites for project id: {projectId}");
             return _suiteList;
         }
@@ -142,6 +152,7 @@ public class DataServices : IDataInterface
             return null;
         }
     }
+
     public async Task<TestSuites> GetSuite(int id)
     {
         try
@@ -161,8 +172,11 @@ public class DataServices : IDataInterface
     {
         try
         {
+            var prj = await _context.Projects.FindAsync(suite.Project.Id);
             suite.IsActive = true;
             suite.CreatedDate = DateTime.Now;
+            suite.Project=prj;
+            
             _context.TestSuites.Add(suite);
             await _context.SaveChangesAsync();
             _logger.LogInformation($"Created suite: {suite.RequirementName}");
@@ -179,7 +193,7 @@ public class DataServices : IDataInterface
     {
         suite.ModifiedDate = DateTime.Now;
         _context.Entry(suite).State = EntityState.Modified;
-        
+
         try
         {
             await _context.SaveChangesAsync();
@@ -187,8 +201,8 @@ public class DataServices : IDataInterface
         }
         catch (DbUpdateConcurrencyException ex)
         {
-           _logger.LogError($"Error updating suite {ex.Message}");
-           return null;
+            _logger.LogError($"Error updating suite {ex.Message}");
+            return null;
         }
 
         return suite;
@@ -199,10 +213,10 @@ public class DataServices : IDataInterface
         try
         {
             var _suite = await _context.TestSuites.FindAsync(id);
-            
+
             _suite.IsActive = false;
             _suite.ModifiedDate = DateTime.Now;
-            
+
             _context.Entry(_suite).State = EntityState.Modified;
             await _context.SaveChangesAsync();
             _logger.LogInformation($"Deleted suite: {_suite.RequirementName}");
@@ -215,73 +229,243 @@ public class DataServices : IDataInterface
         }
     }
 
-
     #endregion
 
     #region TestCase
 
-    
     public async Task<List<TestCases>> GetCasesList()
     {
-        throw new NotImplementedException();
+        try
+        {
+            var _caseList = await _context.TestCases
+                .AsNoTracking()
+                .Include(a=>a.TestSuite)
+                .Include(a=>a.TestSuite.Project)
+                .Where(c => c.IsActive).ToListAsync();
+            _logger.LogInformation("Get all TestCases");
+            return _caseList;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error retrieve TestCases {ex.Message}");
+            return null;
+        }
     }
 
     public async Task<List<TestCases>> GetCasesList(int suiteId)
     {
-        throw new NotImplementedException();
+        try
+        {
+            var _caseList = await _context.TestCases
+                .AsNoTracking()
+                .Include(a=>a.TestSuite)
+                .Include(a=>a.TestSuite.Project)
+                .Where(c => c.IsActive && c.TestSuite.Id == suiteId).ToListAsync();
+            _logger.LogInformation($"Get all TestCases for suite id: {suiteId}");
+            return _caseList;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error retrieve TestCases for suite {ex.Message}");
+            return null;
+        }
     }
 
+    public async Task<List<TestCases>> GetCasesListByProject(int projectId)
+    {
+        try
+        {
+            var _caseList = await _context.TestCases
+                .AsNoTracking()
+                .Include(a=>a.TestSuite)
+                .Include(a=>a.TestSuite.Project)
+                .Where(c => c.IsActive && c.TestSuite.Project.Id == projectId).ToListAsync();
+            _logger.LogInformation($"Get all TestCases for project id: {projectId}");
+            return _caseList;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error retrieve TestCases for suite {ex.Message}");
+            return null;
+        }
+    }
     public async Task<TestCases> GetCase(int id)
     {
-        throw new NotImplementedException();
+        try
+        {
+            var _case = await _context.TestCases.FindAsync(id);
+            _logger.LogInformation($"Get TestCases by id: {id}");
+            return _case;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error retrieve TestCases {ex.Message}");
+            return null;
+        }
     }
 
     public async Task<TestCases> CreateCase(TestCases testCase)
     {
-        throw new NotImplementedException();
+        try
+        {
+            var suite = await _context.TestSuites.FindAsync(testCase.TestSuite.Id);
+            var project = await _context.Projects.FindAsync(testCase.TestSuite.Project.Id);
+            testCase.TestSuite = suite;
+            testCase.TestSuite.Project = project;
+            
+            testCase.IsActive = true;
+            testCase.CreatedDate = DateTime.Now;
+            _context.TestCases.Add(testCase);
+            await _context.SaveChangesAsync();
+            _logger.LogInformation($"Created TestCases: {testCase.TestCaseName}");
+            return testCase;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error create TestCases {ex.Message}");
+            return null;
+        }
     }
 
     public async Task<TestCases> UpdateCase(TestCases testCase)
     {
-        throw new NotImplementedException();
+        try
+        {
+            testCase.ModifiedDate = DateTime.Now;
+            _context.Entry(testCase).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+            _logger.LogInformation($"Updated TestCases: {testCase.TestCaseName}");
+            return testCase;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error update TestCases {ex.Message}");
+            return null;
+        }
     }
 
     public async Task<TestCases> Deletecase(int id)
     {
-        throw new NotImplementedException();
+        try
+        {
+            var _case = await _context.TestCases.FindAsync(id);
+            _case.IsActive = false;
+            _case.ModifiedDate = DateTime.Now;
+            _context.Entry(_case).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+            _logger.LogInformation($"Deleted TestCases: {_case.TestCaseName}");
+            return _case;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error delete TestCases {ex.Message}");
+            return null;
+        }
     }
 
     #endregion
-    
+
     #region TestScripts
+
     public async Task<List<TestScripts>> GetScriptList()
     {
-        throw new NotImplementedException();
+        try
+        {
+            var _scriptList = await _context.TestScripts.Where(c => c.IsActive).ToListAsync();
+            _logger.LogInformation("Get all TestScripts");
+            return _scriptList;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error retrieve TestScripts {ex.Message}");
+            return null;
+        }
     }
 
     public async Task<List<TestScripts>> GetScriptList(int testCaseId)
     {
-        throw new NotImplementedException();
+        try
+        {
+            var _scriptList = await _context.TestScripts.Where(c => c.IsActive && c.TestCase.Id == testCaseId)
+                .ToListAsync();
+            _logger.LogInformation($"Get all TestScripts for TestCases id: {testCaseId}");
+            return _scriptList;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error retrieve TestScripts for TestCases {ex.Message}");
+            return null;
+        }
     }
 
     public async Task<TestScripts> GetScript(int id)
     {
-        throw new NotImplementedException();
+        try
+        {
+            var _script = await _context.TestScripts.FindAsync(id);
+            _logger.LogInformation($"Get TestScripts by id: {id}");
+            return _script;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error retrieve TestScripts {ex.Message}");
+            return null;
+        }
     }
 
     public async Task<TestScripts> CreateScript(TestScripts script)
     {
-        throw new NotImplementedException();
+        try
+        {
+            script.IsActive = true;
+            script.CreatedDate = DateTime.Now;
+            _context.TestScripts.Add(script);
+            await _context.SaveChangesAsync();
+            _logger.LogInformation($"Created TestScripts: {script.Id}");
+            return script;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error create TestScripts {ex.Message}");
+            return null;
+        }
     }
 
     public async Task<TestScripts> UpdateScript(TestScripts script)
     {
-        throw new NotImplementedException();
+        try
+        {
+            script.ModifiedDate = DateTime.Now;
+            _context.Entry(script).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+            _logger.LogInformation($"Updated TestScripts: {script.Id}");
+            return script;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error update TestScripts {ex.Message}");
+            return null;
+        }
     }
 
     public async Task<TestScripts> DeleteScript(int id)
     {
-        throw new NotImplementedException();
+        try
+        {
+            var _script = await _context.TestScripts.FindAsync(id);
+            _script.IsActive = false;
+            _script.ModifiedDate = DateTime.Now;
+            _context.Entry(_script).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+            _logger.LogInformation($"Deleted TestScripts: {_script.Id}");
+            return _script;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error delete TestScripts {ex.Message}");
+            return null;
+        }
     }
+
     #endregion
 }

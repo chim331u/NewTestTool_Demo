@@ -1,20 +1,207 @@
 ﻿@page "/"
-@using TestToolWeb.Interfaces
-
 
 <PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
-
-Welcome to your new app.
-
 <RadzenButton ButtonStyle="ButtonStyle.Danger" Click="@ButtonClicked" Text="Hi"></RadzenButton>
 
+<hr/>
+<RadzenDataGrid @ref="projectGrid" AllowAlternatingRows="false" AllowFiltering="true" AllowPaging="true" PageSize="5" AllowSorting="true" EditMode="@editMode"
+                Data="@projects" TItem="Projects" RowUpdate="@OnUpdateRow" RowCreate="@OnCreateRow" Sort="@Reset" Page="@Reset" Filter="@Reset" ColumnWidth="200px">
+    <HeaderTemplate>
+        <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="add_circle" Text="Add New" Click="@InsertRow" Disabled="@(editMode == DataGridEditMode.Single && projectToInsert.Count() > 0)" />
+    </HeaderTemplate>
+    <Columns>
+        <RadzenDataGridColumn Property="Id" Title="Prj ID" Width="120px" Frozen="true" />
+
+        <RadzenDataGridColumn Property="@nameof(Projects.ProjectName)" Title="Prj Name">
+            <EditTemplate Context="_project">
+                <RadzenTextBox @bind-Value="_project.ProjectName" Style="width:200px; display: block" Name="Prj Name" aria-label="Enter prj name" />
+                <RadzenRequiredValidator Text="Name is required" Component="ProjectName" Popup="true" />
+            </EditTemplate>
+        </RadzenDataGridColumn>      
+        
+        <RadzenDataGridColumn Property="@nameof(Projects.ProjectCode)" Title="Prj Code">
+            <EditTemplate Context="_project">
+                <RadzenTextBox @bind-Value="_project.ProjectCode" Style="width:200px; display: block" Name="Prj Code" aria-label="Enter prj Code" />
+            </EditTemplate>
+        </RadzenDataGridColumn>     
+        
+        <RadzenDataGridColumn Property="@nameof(Projects.RmsNumber)" Title="Rms">
+            <EditTemplate Context="_project">
+                <RadzenTextBox @bind-Value="_project.RmsNumber" Style="width:200px; display: block" Name="rms"  />
+            </EditTemplate>
+        </RadzenDataGridColumn>
+        
+        <RadzenDataGridColumn Context="project" Filterable="false" Sortable="false" TextAlign="TextAlign.Right" Frozen="true" FrozenPosition="FrozenColumnPosition.Right">
+            <Template Context="project">
+                <RadzenButton Icon="play_circle_outline" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" class="rz-my-1 rz-ms-1" Click="@(args => GoToSuite(project.Id))" @onclick:stopPropagation="true"/>
+                <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" class="rz-my-1 rz-ms-1" Click="@(args => EditRow(project))" @onclick:stopPropagation="true"/>
+                <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Flat" Size="ButtonSize.Medium" Shade="Shade.Lighter" class="rz-my-1 rz-ms-1" Click="@(args => DeleteRow(project))" @onclick:stopPropagation="true"/>
+            </Template>
+            <EditTemplate Context="project">
+                <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@((args) => SaveRow(project))" aria-label="Save"/>
+                <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" class="rz-my-1 rz-ms-1" Click="@((args) => CancelEdit(project))" aria-label="Cancel"/>
+                <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Flat" Size="ButtonSize.Medium" Shade="Shade.Lighter" class="rz-my-1 rz-ms-1" Click="@(args => DeleteRow(project))" aria-label="Delete" />
+            </EditTemplate>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
 
 @code {
 
     [Inject] public IApiService _service { get; set; }
 
+    RadzenDataGrid<Projects> projectGrid;
+    IEnumerable<Projects> projects;
+
+
+    DataGridEditMode editMode = DataGridEditMode.Single;
+
+    List<Projects> projectToInsert = new List<Projects>();
+    List<Projects> projectToUpdate = new List<Projects>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        // projects = dbContext.Orders.Include("Customer").Include("Employee");
+        projects = await _service.GetProjectList();
+    }
+    void Reset()
+    {
+        projectToInsert.Clear();
+        projectToUpdate.Clear();
+    }
+
+    void Reset(Projects project)
+    {
+        projectToInsert.Remove(project);
+        projectToUpdate.Remove(project);
+    }
+    
+    async Task EditRow(Projects _project)
+    {
+        if (!projectGrid.IsValid) return;
+
+        if (editMode == DataGridEditMode.Single)
+        {
+            Reset();
+        }
+
+        projectToUpdate.Add(_project);
+        await projectGrid.EditRow(_project);
+    }
+
+    async Task OnUpdateRow(Projects _project)
+    {
+        // Reset(_project);
+
+        if (_project.Id == 0)
+        {
+           var projectNew = await _service.AddProject(_project);
+           await projectGrid.UpdateRow(projectNew);
+           projectGrid.CancelEditRow(_project);
+        }
+        else
+        {
+           var updateProject = await _service.UpdateProject(_project.Id, _project);
+           await projectGrid.UpdateRow(updateProject);
+           
+           projectGrid.CancelEditRow(_project);
+
+        }
+        
+       // projects = await _service.GetProjectList();
+        
+        Reset(_project);
+        
+        await projectGrid.Reload();
+        StateHasChanged();
+
+    }
+
+    async Task SaveRow(Projects _project)
+    {
+        if (_project.Id == 0)
+        {
+            var projectNew = await _service.AddProject(_project);
+            await projectGrid.UpdateRow(projectNew);
+            projectGrid.CancelEditRow(_project);
+
+            projects = await _service.GetProjectList();
+        }
+        else
+        {
+            var updateProject = await _service.UpdateProject(_project.Id, _project);
+            await projectGrid.UpdateRow(updateProject);
+           
+            projectGrid.CancelEditRow(_project);
+
+        }
+        Reset(_project);
+        
+        await projectGrid.Reload();
+        // await projectGrid.UpdateRow(_project);
+    }
+
+    void CancelEdit(Projects _project)
+    {
+        Reset(_project);
+
+        projectGrid.CancelEditRow(_project);
+
+        // var orderEntry = dbContext.Entry(order);
+        // if (orderEntry.State == EntityState.Modified)
+        // {
+        //     orderEntry.CurrentValues.SetValues(orderEntry.OriginalValues);
+        //     orderEntry.State = EntityState.Unchanged;
+        // }
+    }
+
+    async Task DeleteRow(Projects _project)
+    {
+        Reset(_project);
+
+        if (projects.Contains(_project))
+        {
+            _service.DeleteProject(_project.Id);
+
+            projects = projects.Where(o => o != _project);
+            await projectGrid.Reload();
+        }
+        else
+        {
+            projectGrid.CancelEditRow(_project);
+            await projectGrid.Reload();
+        }
+        
+    }
+
+    async Task InsertRow()
+    {
+        if (!projectGrid.IsValid) return;
+
+        if (editMode == DataGridEditMode.Single)
+        {
+            Reset();
+        }
+        
+        var project = new Projects
+        {
+            ProjectName = String.Empty
+        };
+        projectToInsert.Add(project);
+        await projectGrid.InsertRow(project);
+    }
+
+    void OnCreateRow(Projects _project)
+    {
+        _service.AddProject(_project);
+
+        projectToInsert.Remove(_project);
+    }
+    
+    // -------
     private async Task ButtonClicked()
     {
         Console.WriteLine("Clicked");
@@ -34,6 +221,11 @@ Welcome to your new app.
         {
             Console.WriteLine("No project found");
         }
+    }
+
+    private void GoToSuite(int projectId)
+    {
+        NavigationManager.NavigateTo($"SuitePage/{projectId}");
     }
 
 }

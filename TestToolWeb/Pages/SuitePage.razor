@@ -1,0 +1,303 @@
+@page "/SuitePage/{projectId:int}"
+
+@* @if (suites != null && suites.Count() > 0) *@
+@* { *@
+@*     <h2> Project id = @selectedProject.Id - Name = @selectedProject.ProjectName </h2> *@
+    <hr/>
+    <RadzenTabs @bind-SelectedIndex=@selectedTabIndex Change=@OnChange TabPosition="TabPosition.Top"
+                RenderMode="TabRenderMode.Client">
+        <Tabs>
+            <RadzenTabsItem Text="Summary">
+                <RadzenDataGrid @ref="suiteGrid" AllowAlternatingRows="false" AllowFiltering="true" AllowPaging="true"
+                                PageSize="5" AllowSorting="true" EditMode="@editMode"
+                                Data="@suites" TItem="TestSuites" RowUpdate="@OnUpdateRow" RowCreate="@OnCreateRow"
+                                Sort="@Reset" Page="@Reset" Filter="@Reset" ColumnWidth="200px">
+                    <HeaderTemplate>
+                        <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="add_circle" Text="Add New"
+                                      Click="@InsertRow"
+                                      Disabled="@(editMode == DataGridEditMode.Single && suiteToInsert.Count() > 0)"/>
+                    </HeaderTemplate>
+                    <Columns>
+                        <RadzenDataGridColumn Property="Id" Title="Prj ID" Width="120px" Frozen="true"/>
+
+                        <RadzenDataGridColumn Property="@nameof(TestSuites.RequirementName)" Title="Req Name">
+                            <EditTemplate Context="_suite">
+                                <RadzenTextBox @bind-Value="_suite.RequirementName" Style="width:200px; display: block"
+                                               Name="Req Name" aria-label="Enter Req name"/>
+                                <RadzenRequiredValidator Text="Name is required" Component="RequirementName"
+                                                         Popup="true"/>
+                            </EditTemplate>
+                        </RadzenDataGridColumn>
+
+
+                        <RadzenDataGridColumn Context="project" Filterable="false" Sortable="false"
+                                              TextAlign="TextAlign.Right" Frozen="true"
+                                              FrozenPosition="FrozenColumnPosition.Right">
+                            <Template Context="project">
+                                @* <RadzenButton Icon="play_circle_outline" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" class="rz-my-1 rz-ms-1" Click="@(args => GoToSuite(project.Id))" @onclick:stopPropagation="true"/> *@
+                                <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat"
+                                              Size="ButtonSize.Medium" class="rz-my-1 rz-ms-1"
+                                              Click="@(args => EditRow(project))" @onclick:stopPropagation="true"/>
+                                <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Flat"
+                                              Size="ButtonSize.Medium" Shade="Shade.Lighter" class="rz-my-1 rz-ms-1"
+                                              Click="@(args => DeleteRow(project))" @onclick:stopPropagation="true"/>
+                            </Template>
+                            <EditTemplate Context="project">
+                                <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat"
+                                              Size="ButtonSize.Medium" Click="@((args) => SaveRow(project))"
+                                              aria-label="Save"/>
+                                <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat"
+                                              Size="ButtonSize.Medium" class="rz-my-1 rz-ms-1"
+                                              Click="@((args) => CancelEdit(project))" aria-label="Cancel"/>
+                                <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Flat"
+                                              Size="ButtonSize.Medium" Shade="Shade.Lighter" class="rz-my-1 rz-ms-1"
+                                              Click="@(args => DeleteRow(project))" aria-label="Delete"/>
+                            </EditTemplate>
+                        </RadzenDataGridColumn>
+                    </Columns>
+                </RadzenDataGrid>
+
+            </RadzenTabsItem>
+
+            @foreach (var tab in suites)
+            {
+            <RadzenTabsItem Text=@tab.RequirementName>
+            
+                    <h3>@tab.RequirementName</h3>
+            @*         <h3>TC n. @testCases.Where(x=>x.TestSuite.Id==tab.Id).Count().ToString()</h3> *@
+            @* *@
+            @*         <RadzenDataGrid AllowFiltering="false" AllowPaging="true" AllowSorting="false" FilterPopupRenderMode="PopupRenderMode.OnDemand" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" *@
+            @*                         Data="@testCases" ColumnWidth="200px"> *@
+            @*                         $1$ RowRender="@RowRender" CellRender="@CellRender" HeaderCellRender="@HeaderFooterCellRender" FooterCellRender="@HeaderFooterCellRender"> #1# *@
+            @*             <Columns> *@
+            @*                 <RadzenDataGridColumn Property="@nameof(TestCases.Id)" Title="Case Id"> *@
+            @*                     <FooterTemplate> *@
+            @*                         Total records: <b>@testCases.Count()</b> *@
+            @*                     </FooterTemplate> *@
+            @*                 </RadzenDataGridColumn> *@
+            @*                 <RadzenDataGridColumn Property="@nameof(TestCases.TestSuite.Id)" Title="SuiteID/SuiteName" *@
+            @*                                       SortProperty="TestSuite.RequirementName" FilterProperty="Product.RequirementName"> *@
+            @*                 </RadzenDataGridColumn> *@
+            @*                 <RadzenDataGridColumn Property="TestSuite.RequirementName" Title="Suite Name" /> *@
+            @*             </Columns> *@
+            @*         </RadzenDataGrid> *@
+            </RadzenTabsItem>
+            }
+
+        </Tabs>
+    </RadzenTabs>
+@* } *@
+@* else *@
+@* { *@
+@*     <p>No suites found for project id @projectId</p> *@
+@* } *@
+
+
+@code {
+    [Inject] public IApiService _service { get; set; }
+    [Parameter] public int projectId { get; set; }
+
+    RadzenDataGrid<TestSuites> suiteGrid;
+    IEnumerable<TestSuites> suites;
+    DataGridEditMode editMode = DataGridEditMode.Single;
+
+    List<TestSuites> suiteToInsert = new List<TestSuites>();
+    List<TestSuites> suiteToUpdate = new List<TestSuites>();
+
+    Projects selectedProject;
+    int selectedTabIndex = 0;
+    TestSuites selectedSuite;
+    
+    IEnumerable<TestCases> testCases;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // TestCases newTestCases = new TestCases
+        // {
+        //     TestSuite = new TestSuites
+        //     {
+        //         Project = new Projects
+        //         {
+        //             ProjectName = string.Empty, Id = projectId
+        //         }, Id = 5
+        //     }, TestCaseName = "First Test Case", TestCaseId = "1"
+        // };
+        //
+        // await _service.AddTestCase(newTestCases);
+        
+        await base.OnInitializedAsync();
+
+        suites = await _service.GetSuitesListByProject(projectId);
+        //
+        // foreach (var _suite in suites)
+        // {
+        //     TestCases newTestCases = new TestCases
+        //     {
+        //         TestSuite = _suite, TestCaseName = "New First Test Case", TestCaseId = "1"
+        //     };
+        //     
+        //     await _service.AddTestCase(newTestCases);
+        //     
+        //     newTestCases = new TestCases
+        //     {
+        //         TestSuite = _suite, TestCaseName = "New second Test Case", TestCaseId = "2"
+        //     };
+        //     
+        //     await _service.AddTestCase(newTestCases);
+        //
+        //     
+        //     newTestCases = new TestCases
+        //     {
+        //         TestSuite = _suite, TestCaseName = "New third Test Case", TestCaseId = "3"
+        //     };
+        //     
+        //     await _service.AddTestCase(newTestCases);
+        //
+        // }
+        
+        testCases = await _service.GetTestCaseListByProject(projectId);
+        // suites = testCases.Select(c => c.TestSuite).Distinct().ToList();
+        
+        // if (suites != null && suites.Count()>0) selectedProject = suites.FirstOrDefault().Project;
+    }
+
+    void Reset()
+    {
+        suiteToInsert.Clear();
+        suiteToUpdate.Clear();
+    }
+
+    void Reset(TestSuites suite)
+    {
+        suiteToInsert.Remove(suite);
+        suiteToUpdate.Remove(suite);
+    }
+
+    async Task EditRow(TestSuites _suite)
+    {
+        if (!suiteGrid.IsValid) return;
+
+        if (editMode == DataGridEditMode.Single)
+        {
+            Reset();
+        }
+
+        suiteToUpdate.Add(_suite);
+        await suiteGrid.EditRow(_suite);
+    }
+
+    async Task OnUpdateRow(TestSuites _suite)
+    {
+        if (_suite.Id == 0)
+        {
+            var suiteNew = await _service.AddSuite(_suite);
+            await suiteGrid.UpdateRow(suiteNew);
+            suiteGrid.CancelEditRow(_suite);
+        }
+        else
+        {
+            var upadteSuite = await _service.UpdateSuite(_suite.Id, _suite);
+            await suiteGrid.UpdateRow(upadteSuite);
+
+            suiteGrid.CancelEditRow(_suite);
+        }
+
+        Reset(_suite);
+
+        await suiteGrid.Reload();
+        StateHasChanged();
+    }
+
+    async Task SaveRow(TestSuites _suite)
+    {
+        if (_suite.Id == 0)
+        {
+            var suiteNew = await _service.AddSuite(_suite);
+            await suiteGrid.UpdateRow(suiteNew);
+            suiteGrid.CancelEditRow(_suite);
+
+            suites = await _service.GetSuitesListByProject(_suite.Project.Id);
+        }
+        else
+        {
+            var updateSuite = await _service.UpdateSuite(_suite.Id, _suite);
+            await suiteGrid.UpdateRow(updateSuite);
+
+            suiteGrid.CancelEditRow(_suite);
+        }
+
+        Reset(_suite);
+
+        await suiteGrid.Reload();
+    }
+
+    void CancelEdit(TestSuites _suite)
+    {
+        Reset(_suite);
+
+        suiteGrid.CancelEditRow(_suite);
+
+        // var orderEntry = dbContext.Entry(order);
+        // if (orderEntry.State == EntityState.Modified)
+        // {
+        //     orderEntry.CurrentValues.SetValues(orderEntry.OriginalValues);
+        //     orderEntry.State = EntityState.Unchanged;
+        // }
+    }
+
+    async Task DeleteRow(TestSuites _suite)
+    {
+        Reset(_suite);
+
+        if (suites.Contains(_suite))
+        {
+            _service.DeleteSuite(_suite.Id);
+
+            suites = suites.Where(o => o != _suite);
+            await suiteGrid.Reload();
+        }
+        else
+        {
+            suiteGrid.CancelEditRow(_suite);
+            await suiteGrid.Reload();
+        }
+    }
+
+    async Task InsertRow()
+    {
+        if (!suiteGrid.IsValid) return;
+
+        if (editMode == DataGridEditMode.Single)
+        {
+            Reset();
+        }
+
+        var suite = new TestSuites
+        {
+            Project = new Projects
+            {
+                Id = projectId,
+                ProjectName = string.Empty
+            }
+        };
+        suiteToInsert.Add(suite);
+        await suiteGrid.InsertRow(suite);
+    }
+
+    void OnCreateRow(TestSuites _suite)
+    {
+        _service.AddSuite(_suite);
+
+        suiteToInsert.Remove(_suite);
+    }
+
+    async Task OnChange(int index)
+    {
+        Console.WriteLine($"Tab with index {index} was selected.");
+        selectedSuite = suites.ElementAtOrDefault(index-1);
+
+        if (selectedSuite != null) Console.WriteLine(selectedSuite.RequirementName);
+        await InvokeAsync(StateHasChanged);
+    }
+
+}

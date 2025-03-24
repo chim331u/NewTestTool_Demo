@@ -203,7 +203,7 @@ namespace TestToolApi.Migrations
             modelBuilder.Entity("DataModel.TestCases", b =>
                 {
                     b.HasOne("DataModel.TestSuites", "TestSuite")
-                        .WithMany()
+                        .WithMany("TestCases")
                         .HasForeignKey("TestSuiteId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -214,7 +214,7 @@ namespace TestToolApi.Migrations
             modelBuilder.Entity("DataModel.TestScripts", b =>
                 {
                     b.HasOne("DataModel.TestCases", "TestCase")
-                        .WithMany()
+                        .WithMany("TestScripts")
                         .HasForeignKey("TestCaseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -225,12 +225,27 @@ namespace TestToolApi.Migrations
             modelBuilder.Entity("DataModel.TestSuites", b =>
                 {
                     b.HasOne("DataModel.Projects", "Project")
-                        .WithMany()
+                        .WithMany("TestSuites")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("DataModel.Projects", b =>
+                {
+                    b.Navigation("TestSuites");
+                });
+
+            modelBuilder.Entity("DataModel.TestCases", b =>
+                {
+                    b.Navigation("TestScripts");
+                });
+
+            modelBuilder.Entity("DataModel.TestSuites", b =>
+                {
+                    b.Navigation("TestCases");
                 });
 #pragma warning restore 612, 618
         }
