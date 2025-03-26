@@ -18,7 +18,7 @@ public class Projects : BaseEntity
     
 
     
-    public virtual ICollection<TestSuites> TestSuites { get; } = new List<TestSuites>();
+    public ICollection<TestSuites> TestSuites { get; } = new List<TestSuites>();
     
     //DTO only
     public int PassPercent { get; set; }

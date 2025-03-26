@@ -20,7 +20,7 @@ public class TestCases : BaseEntity
     public string? ChangeDescription { get; set; }
     
     
-    public virtual ICollection<TestScripts> TestScripts { get; } = new List<TestScripts>();
+    public ICollection<TestScripts> TestScripts { get; } = new List<TestScripts>();
     
     //DTO ?
     //number of test script in this test case
