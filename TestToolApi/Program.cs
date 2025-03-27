@@ -24,6 +24,9 @@ builder.Services.AddCors(policy =>
 builder.Services.AddDbContext<DataContext>(
     opt => opt.UseSqlite(builder.Configuration.GetConnectionString("SqlLiteConnectionFileName")));
 builder.Services.AddScoped<IDataInterface, DataServices>();
+// builder.Services.AddControllers();
+
+builder.Services.AddAutoMapper(typeof(Program).Assembly);
 
 builder.Services.AddControllers().AddJsonOptions(x =>
     x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve);

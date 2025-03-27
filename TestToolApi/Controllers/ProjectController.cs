@@ -1,4 +1,5 @@
 using DataModel;
+using DataModel.DTO;
 using Microsoft.AspNetCore.Mvc;
 using TestToolApi.Interfaces;
 
@@ -24,6 +25,19 @@ public class ProjectController : ControllerBase
     public async Task<ActionResult<IEnumerable<Projects>>> GetProjectList()
     {
         var projects = await _service.GetProjectList();
+
+        if (projects == null)
+        {
+            return NotFound();
+        }
+
+        return Ok(projects);
+    }   
+    
+    [HttpGet("GetDTOProjectList")]
+    public async Task<ActionResult<IEnumerable<DTO_ProjectInfo>>> GetDTOProjectList()
+    {
+        var projects = await _service.GetDTOProjectList();
 
         if (projects == null)
         {

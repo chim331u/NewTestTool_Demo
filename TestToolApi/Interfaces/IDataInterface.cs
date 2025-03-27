@@ -1,4 +1,5 @@
 using DataModel;
+using DataModel.DTO;
 
 namespace TestToolApi.Interfaces;
 
@@ -7,6 +8,7 @@ public interface IDataInterface
     #region Project
 
     Task<List<Projects>> GetProjectList();
+    Task<List<DTO_ProjectInfo>> GetDTOProjectList();
     Task<Projects> GetProject(int id);
     Task<Projects> CreateProject(Projects project);
     Task<Projects> UpdateProject(Projects project);

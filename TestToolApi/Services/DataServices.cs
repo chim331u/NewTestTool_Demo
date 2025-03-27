@@ -1,4 +1,6 @@
+using AutoMapper;
 using DataModel;
+using DataModel.DTO;
 using Microsoft.EntityFrameworkCore;
 using TestToolApi.Data;
 using TestToolApi.Interfaces;
@@ -10,26 +12,124 @@ public class DataServices : IDataInterface
     private readonly DataContext _context;
     private readonly IConfiguration _config;
     private readonly ILogger<DataServices> _logger;
-
-    public DataServices(IConfiguration config, ILogger<DataServices> logger, DataContext context)
+    private readonly IMapper _mapper;
+    public DataServices(IConfiguration config, ILogger<DataServices> logger, DataContext context, IMapper mapper)
     {
         _context = context;
         _config = config;
         _logger = logger;
+        _mapper = mapper;
     }
 
     #region Projects
 
+    void AddSampleData()
+{
+    //add projects
+    for (int i = 0; i < 5; i++)
+    {
+        var project = new Projects()
+        {
+            
+            ProjectName = $"Project {i}",
+            ProjectCode = $"Project code {i}",
+            CreatedDate = DateTime.Now, IsActive =  true
+        };
+        
+        _context.Add(project);
+    }
+    _context.SaveChanges();
+    
+    //add suites
+    for (int i = 0; i < 6; i++)
+    {
+        foreach (var _project in _context.Projects)
+        {
+            var suite = new TestSuites()
+            {
+                ProjectId = _project.Id,
+                Project = _project,
+                RequirementName = $"Suite {i} - prj {_project.Id}",
+                RequirementDescription = $"Suite description {i} - prj {_project.Id}",
+                CreatedDate = DateTime.Now, IsActive =  true
+            };
+            _context.Add(suite);
+            
+        }
+    }
+    _context.SaveChanges();
+    
+    //add cases
+    
+        foreach (var _suite in _context.TestSuites)
+        {
+            for (int i = 0; i < 7; i++)
+            {
+                var testCase = new TestCases()
+                {
+                    TestSuiteId = _suite.Id,
+                    TestSuite = _suite,
+                    TestCaseName = $"Case {i} - suite {_suite.Id}",
+                    TestCaseDescription = $"Case description {i} - suite {_suite.Id}",
+                    CreatedDate = DateTime.Now, IsActive =  true
+                };
+                _context.Add(testCase);
+               
+            }
+        }
+    _context.SaveChanges();
+    
+    //add scripts
+    foreach (var _case in _context.TestCases)
+    {
+        for (int i = 0; i < 8; i++)
+        {
+            var script = new TestScripts()
+            {
+                TestCaseId = _case.Id,
+                TestCase = _case,
+                ScriptStepNum = $"Script num {i} - case {_case.Id}",
+                ScriptStepDescription = $"Script description {i} - case {_case.Id}",
+                CreatedDate = DateTime.Now, IsActive =  true
+            };
+            _context.Add(script);
+            
+        }
+    }
+    _context.SaveChanges();
+    
+    Console.WriteLine("Data added");
+}
     public async Task<List<Projects>> GetProjectList()
+    {
+        AddSampleData();
+        try
+        {
+            var projectList = await _context.Projects.AsNoTracking()
+                .Include(x=>x.TestSuites)
+                .ThenInclude(c=>c.TestCases)
+                .ThenInclude(s=>s.TestScripts)
+                .Where(c => c.IsActive).ToListAsync();
+            
+            _logger.LogInformation("Get all projects");
+            return projectList;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error retrieve projects {ex.Message}");
+            return null;
+        }
+    }    
+    
+    public async Task<List<DTO_ProjectInfo>> GetDTOProjectList()
     {
         try
         {
             var projectList = await _context.Projects.AsNoTracking()
-                .Include(x=>x.TestSuites).ThenInclude(x=>x.TestCases)
                 .Where(c => c.IsActive).ToListAsync();
-            ;
-            _logger.LogInformation("Get all projects");
-            return projectList;
+            
+            _logger.LogInformation("Get all projects, map to DTO");
+            return _mapper.Map<List<DTO_ProjectInfo>>(projectList);
         }
         catch (Exception ex)
         {
